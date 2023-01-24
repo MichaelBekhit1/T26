@@ -86,20 +86,6 @@ def valid_password():
         else:
             return password
 
-def register_user(valid_username, valid_password):
-    
-    # Injection attack vulnerability dealt with by hashing the username
-
-            cursor.execute(f"""
-            INSERT INTO user_credentials (username, password)
-            VALUES ('{(hashlib.sha1(valid_username.encode())).hexdigest()}', '{(hashlib.sha1(valid_password.encode())).hexdigest()}');
-            """)
-            user_database.commit()
-            print("The user has been registered successfully.")
-            
-        
-    
-
 def validate_login(username_input, password_input):
 
     # Filter the table for the given username and password and return the username if they are present. If they are not present the login is not valid
@@ -113,11 +99,60 @@ def validate_login(username_input, password_input):
     else:
         return False
     
+
+def register_user(valid_username, valid_password): # note that these should been validated using the appropriate functions - Is there a token facility for this? 
+    
+    # Injection attack vulnerability dealt with by hashing the username
+
+            cursor.execute(f"""
+            INSERT INTO user_credentials (username, password)
+            VALUES ('{(hashlib.sha1(valid_username.encode())).hexdigest()}', '{(hashlib.sha1(valid_password.encode())).hexdigest()}');
+            """)
+            user_database.commit()
+            print("The user has been registered successfully.")
+            
+      
 # The intention here is to return the user to the menu to complete further actions but to check that their authorisation has not been removed since their last action.
+
+def register_task():
+
+    title = input("Please enter the title of the task: ")
+    description = input("Please describe the task: ")
+    date_assigned = input("Please input the date in the required format( e.g. 17 Jan 2022): ") # these date inputs could have some validation
+    date_due = input("Please enter the date the task is due for completion in the required format(e.g. 17 Jan 2022")
+    assigned_user_id = input("Please enter the id of the user you wish to assign the task to: ")
+    cursor.execute(f"SELECT username FROM 26_capstone_iii.user_credentials WHERE (user_id = '{assigned_user_id}');")
+    returned_username = cursor.fetchone()
+
+    if returned_username == None:
+        print("You have entered a user_id that is not recognised.")
+        proceed = input("If you wish to proceed with registration of the task without a user_id please enter 'y' or to exit, press enter: ")
+    else:
+        proceed = input(f"""
+        The task that you have entered is as follows:
+        title: {title}
+        description: {description}
+        date assigned: {date_assigned}
+        date due: {date_due}
+        assigned user: {assigned_user_id} {returned_username}
+        
+        If you wish to proceed please enter 'y' to exit, press enter: 
+        """)
+
+    if proceed != "y":
+            exit()
+    else:
+
+        # Injection attack defence - placeholder accepts data type string and data type int accordingly. Note: More research.
+
+        sql = "INSERT INTO 26_capstone_iii.tasks (title, description, date_assigned, date_due, user_id) VALUES (%s, %s, %s, %s, %d)"
+        cursor.execute(sql, (title, description, date_assigned, date_due, assigned_user_id))
+        user_database.commit()
+        print("The user has been registered successfully.")
 
 menu = ""
 
-while validate_login(valid_username(), valid_password()):
+while validate_login(valid_username(), valid_password()) and menu != "e":
     pass
 
 
